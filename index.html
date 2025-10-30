@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema de Órdenes de Trabajo</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <!-- Pantalla de Login -->
+  <div id="loginView" class="login-view">
+    <div class="login-card">
+      <h2>Acceso</h2>
+      <p class="muted">Ingrese sus credenciales para continuar</p>
+      <form id="loginForm" class="login-form">
+        <label for="loginUser">Usuario</label>
+        <input type="text" id="loginUser" autocomplete="username" required placeholder="usuario" />
+        <label for="loginPass">Contraseña</label>
+        <input type="password" id="loginPass" autocomplete="current-password" required placeholder="contraseña" />
+        <button type="submit" id="btnLogin">Entrar</button>
+        <p id="loginError" class="error" hidden>Usuario o contraseña incorrectos.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- App protegida -->
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand">Órdenes de Trabajo</div>
+      <div class="spacer"></div>
+      <div class="userbox">
+        <span id="userName"></span>
+        <button id="btnLogout" class="btn-light small">Salir</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <h1>Órdenes de Trabajo</h1>
+
+      <form id="formOrden">
+        <!-- 1 -->
+        <div>
+          <label for="numero">1️⃣ Número de orden</label>
+          <input type="number" id="numero" required/>
+        </div>
+
+        <!-- 2 -->
+        <div>
+          <label for="area">2️⃣ Área</label>
+          <select id="area" required>
+            <option value="">Seleccione</option>
+            <option>Producción</option>
+            <option>Mantenimiento</option>
+            <option>Calidad</option>
+            <option>Logística</option>
+            <option>Compras</option>
+            <option>Ventas</option>
+            <option>Seguridad</option>
+            <option>Proyectos</option>
+            <option>Ingeniería</option>
+            <option>Almacén</option>
+            <option>Recursos Humanos</option>
+            <option>Tecnología (TI)</option>
+            <option>Finanzas</option>
+            <option>Planta A</option>
+            <option>Planta B</option>
+            <option>Laboratorio</option>
+            <option>Taller 1</option>
+            <option>Taller 2</option>
+            <option>Servicios Generales</option>
+            <option>Administración</option>
+          </select>
+        </div>
+
+        <!-- 3 -->
+        <div>
+          <label for="fecha">3️⃣ Fecha actual</label>
+          <input type="text" id="fecha" readonly/>
+        </div>
+
+        <!-- 4 -->
+        <div>
+          <label for="supervisor">4️⃣ Supervisor responsable</label>
+          <select id="supervisor" required>
+            <option value="">Seleccione</option>
+            <option>Ing. Carlos</option>
+            <option>Ing. Pedro</option>
+            <option>Ing. Juan</option>
+          </select>
+        </div>
+
+        <!-- 5 -->
+        <div>
+          <label for="trabajo">5️⃣ Tipo de trabajo</label>
+          <select id="trabajo" required>
+            <option value="">Seleccione</option>
+            <option>Eléctrico</option>
+            <option>Mecánico</option>
+            <option>Hidráulico</option>
+            <option>Soldadura</option>
+            <option>Automatización</option>
+            <option>Montaje</option>
+            <option>Fabricación</option>
+            <option>Limpieza</option>
+          </select>
+        </div>
+
+        <!-- 6 -->
+        <div>
+          <label for="magnitud">6️⃣ Magnitud del trabajo</label>
+          <select id="magnitud" required>
+            <option value="">Seleccione</option>
+            <option>Pequeño</option>
+            <option>Mediano</option>
+            <option>Grande</option>
+            <option>Fabricación</option>
+            <option>Montaje</option>
+            <option>Corrección</option>
+            <option>Inspección</option>
+          </select>
+        </div>
+
+        <!-- 7 -->
+        <div class="full">
+          <label for="descripcion">7️⃣ Descripción del trabajo</label>
+          <textarea id="descripcion" placeholder="Describa el trabajo..." required></textarea>
+        </div>
+
+        <!-- 8 (checkboxes) -->
+        <div class="full">
+          <label>8️⃣ Personal (marque con un visto)</label>
+          <small class="hint">Se filtra automáticamente según el tipo de trabajo (#5).</small>
+          <div class="toolbar">
+            <button type="button" id="btnSelTodo" class="btn-light">Seleccionar todo</button>
+            <button type="button" id="btnSelNada" class="btn-light">Deseleccionar</button>
+          </div>
+          <div id="listaPersonal" class="personal-grid"><!-- checkboxes dinámicos --></div>
+        </div>
+
+        <!-- 9 -->
+        <div>
+          <label for="inicio">9️⃣ Inicio</label>
+          <input type="datetime-local" id="inicio" required/>
+        </div>
+        <div>
+          <label for="fin">9️⃣ Fin</label>
+          <input type="datetime-local" id="fin" required/>
+        </div>
+        <div>
+          <label for="duracion">Duración (días / horas)</label>
+          <input type="text" id="duracion" readonly placeholder="Se calcula automáticamente"/>
+        </div>
+
+        <!-- 10 -->
+        <div>
+          <label for="responsable">🔟 Responsable de planta en el área</label>
+          <input type="text" id="responsable" placeholder="Ej. Ing. Ramírez" required/>
+        </div>
+
+        <!-- 11 -->
+        <div>
+          <label for="calificacion">1️⃣1️⃣ Calificación</label>
+          <select id="calificacion" required>
+            <option value="">Seleccione</option>
+            <option>Excelente</option>
+            <option>Bueno</option>
+            <option>Regular</option>
+            <option>Deficiente</option>
+          </select>
+        </div>
+
+        <!-- WhatsApp destino opcional -->
+        <div>
+          <label for="telefono">WhatsApp destino (opcional)</label>
+          <input type="tel" id="telefono" placeholder="Ej: 593987654321"/>
+        </div>
+
+        <div class="buttons full">
+          <button type="button" id="btnAgregar">Agregar</button>
+          <button type="reset" id="btnLimpiar">Limpiar</button>
+          <button type="button" id="btnExportar">Exportar CSV</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table id="tablaOrdenes">
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Área</th>
+              <th>Fecha</th>
+              <th>Supervisor</th>
+              <th>Trabajo</th>
+              <th>Magnitud</th>
+              <th>Descripción</th>
+              <th>Personal</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Duración</th>
+              <th>Resp. área</th>
+              <th>Calificación</th>
+              <th>WhatsApp</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
