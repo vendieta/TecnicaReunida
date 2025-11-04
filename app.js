@@ -1,5 +1,20 @@
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+
+// const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function login(email, password) {
+  console.log("Intentando login en Supabase con:", `${email}@tecnicaunidas.com`, password);
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: `${email}@tecnicaunidas.com`,
+    password
+  });
+  console.log(data, error);
+  return { data, error };
+}
+
 /************  AUTENTICACIÓN SIMPLE  ************/
-const CREDENTIALS = { user: "admin", pass: "1234" }; // <-- cámbialas aquí
+const CREDENTIALS = { user: "admidn", pass: "1234" }; // <-- cámbialas aquí
 
 const loginView = document.getElementById("loginView");
 const appView   = document.getElementById("app");
@@ -20,25 +35,32 @@ function checkSession(){
 }
 checkSession();
 
-loginForm.addEventListener("submit", (e)=>{
-  e.preventDefault();
-  const u = document.getElementById("loginUser").value.trim();
-  const p = document.getElementById("loginPass").value.trim();
-  if (u === CREDENTIALS.user && p === CREDENTIALS.pass){
-    localStorage.setItem("sessionUser", u);
-    loginErr.hidden = true;
-    enterApp(u);
-    loginForm.reset();
-  } else {
-    loginErr.hidden = false;
-  }
-});
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const u = document.getElementById("loginUser").value.trim();
+    const p = document.getElementById("loginPass").value.trim();
+    const {data, error} = await login(u, p); // Supabase login attempt
+    console.log("Intento de login con:", u, p);
+    console.log("Resultado:", !error && data);
+    if (!error && data){
+      localStorage.setItem("sessionUser", u);
+      loginErr.hidden = true;
+      enterApp(u);
+      loginForm.reset();
+    } else {
+      loginErr.hidden = false;
+    }
+  });
+}
 
-btnLogout.addEventListener("click", ()=>{
-  localStorage.removeItem("sessionUser");
-  appView.classList.add("hidden");
-  loginView.classList.remove("hidden");
-});
+if (btnLogout) {
+  btnLogout.addEventListener("click", ()=>{
+    localStorage.removeItem("sessionUser");
+    appView.classList.add("hidden");
+    loginView.classList.remove("hidden");
+  });
+}
 
 /************  APP ORIGINAL  ************/
 const fechaInput = document.getElementById("fecha");
@@ -51,28 +73,16 @@ const TIPOS_TRABAJO = [
   "Automatización","Montaje","Fabricación","Limpieza"
 ];
 
-const PERSONAL = [
-  { nombre: "Luis",     skills: ["Eléctrico","Montaje"],          phone: "" },
-  { nombre: "Ana",      skills: ["Eléctrico","Automatización"],   phone: "" },
-  { nombre: "Rosa",     skills: ["Eléctrico","Fabricación"],      phone: "" },
-  { nombre: "Miguel",   skills: ["Mecánico","Montaje"],           phone: "" },
-  { nombre: "José",     skills: ["Mecánico","Soldadura"],         phone: "" },
-  { nombre: "Daniela",  skills: ["Mecánico","Fabricación"],       phone: "" },
-  { nombre: "Pablo",    skills: ["Hidráulico","Montaje"],         phone: "" },
-  { nombre: "Sofía",    skills: ["Hidráulico","Automatización"],  phone: "" },
-  { nombre: "Raúl",     skills: ["Soldadura","Fabricación"],      phone: "" },
-  { nombre: "Carmen",   skills: ["Soldadura","Mecánico"],         phone: "" },
-  { nombre: "Erick",    skills: ["Automatización","Eléctrico"],   phone: "" },
-  { nombre: "Lucía",    skills: ["Automatización","Montaje"],     phone: "" },
-  { nombre: "Tomás",    skills: ["Montaje","Mecánico"],           phone: "" },
-  { nombre: "Andrea",   skills: ["Montaje","Hidráulico"],         phone: "" },
-  { nombre: "Víctor",   skills: ["Fabricación","Soldadura"],      phone: "" },
-  { nombre: "María",    skills: ["Fabricación","Eléctrico"],      phone: "" },
-  { nombre: "Jorge",    skills: ["Eléctrico","Hidráulico"],       phone: "" },
-  { nombre: "Nadia",    skills: ["Mecánico","Automatización"],    phone: "" },
-  { nombre: "Kevin",    skills: ["Soldadura","Montaje"],          phone: "" },
-  { nombre: "Brenda",   skills: ["Hidráulico","Limpieza"],        phone: "" },
-];
+const { data: dataPersonal, error: errorPersonal } = await supabaseClient
+  .from("personal")
+  .select("*")
+
+  if (errorPersonal) {
+  alert("Error al cargar las órdenes de trabajo.");
+  console.error("Error:", error)
+} else {
+  console.log("Trabajadores:", dataPersonal)
+}
 
 function setFechaActual(){ fechaInput.value = new Date().toLocaleDateString(); }
 
@@ -95,7 +105,7 @@ function armarMensajeWA(o){
     `Trabajo: ${o.trabajo}`,
     `Magnitud: ${o.magnitud}`,
     `Descripción: ${o.descripcion}`,
-    `Personal: ${o.personal.join(", ")}`,
+    // `Personal: ${o.personal.join(", ")}`,
     `Inicio: ${new Date(o.inicio).toLocaleString()}`,
     `Fin: ${new Date(o.fin).toLocaleString()}`,
     `Duración: ${o.duracion.dias} día(s) ${o.duracion.horas} hora(s)`,
@@ -113,10 +123,10 @@ function linkWA(textoCodificado, numero=""){
 function renderPersonal(tipoTrabajo = ""){
   listaPersonal.innerHTML = "";
   const filtrados = tipoTrabajo
-    ? PERSONAL.filter(p => p.skills.includes(tipoTrabajo))
-    : PERSONAL;
+    ? dataPersonal.filter(p => p.skills.includes(tipoTrabajo))
+    : dataPersonal;
 
-  (filtrados.length ? filtrados : PERSONAL).forEach(p => {
+  (filtrados.length ? filtrados : dataPersonal).forEach(p => {
     const wrap = document.createElement("label");
     wrap.className = "chk filtered";
     wrap.innerHTML = `
@@ -128,7 +138,17 @@ function renderPersonal(tipoTrabajo = ""){
 }
 
 // Estado
-const ordenes = [];
+const { data, error } = await supabaseClient
+  .from("workOrders")
+  .select("*")
+
+if (error) {
+  alert("Error al cargar las órdenes de trabajo.");
+  console.error("Error:", error)
+} else {
+  console.log("ordenes de trabajo:", data)
+}
+
 
 // Inicialización
 setFechaActual();
@@ -157,7 +177,7 @@ document.getElementById("btnSelNada").addEventListener("click", () => {
 });
 
 // Agregar orden
-document.getElementById("btnAgregar").addEventListener("click", () => {
+document.getElementById("btnAgregar").addEventListener("click", async () => {
   const numero = document.getElementById("numero").value.trim();
   const area = document.getElementById("area").value;
   const fecha = fechaInput.value.trim();
@@ -179,49 +199,66 @@ document.getElementById("btnAgregar").addEventListener("click", () => {
   }
   const duracion = calcularDuracion(inicio, fin);
   if (!duracion.valido){ alert("La fecha/hora de fin debe ser posterior al inicio."); return; }
+  const {data, error} = await supabaseClient.from('workOrders').insert([
+    {
+      area: area,
+      supervisor: supervisor,
+      trabajo: trabajo,
+      magnitud: magnitud,
+      descripcion: descripcion,
+      personal: personal,
+      inicio: inicio,
+      fecha: fecha,
+      fin: fin,
+      duracion: duracion,
+      responsableArea: responsable
+    }]);
+  if (error) {
+  console.error("Error al insertar:", error)
+} else {
+  console.log("Insertado correctamente:", data)
+}
 
-  const orden = { numero, area, fecha, supervisor, trabajo, magnitud, descripcion, personal, inicio, fin, duracion, responsable, calificacion, telefono };
-  ordenes.push(orden);
-  renderTabla();
-
-  // Reset
-  document.getElementById("formOrden").reset();
-  setFechaActual();
-  renderPersonal("");
-  document.getElementById("duracion").value = "";
+// Reset
+document.getElementById("formOrden").reset();
+setFechaActual();
+renderPersonal("");
+document.getElementById("duracion").value = "";
 });
+renderTabla();
 
 // Render tabla
 function renderTabla(){
   tablaBody.innerHTML = "";
-  ordenes.forEach((o) => {
+  data.forEach((o) => {
+    console.log("Orden:", o);
     const tr = document.createElement("tr");
     const msg = armarMensajeWA(o);
     const waTodos = linkWA(msg, o.telefono);
 
-    const waIndividuales = o.personal.map(nombre => {
-      const p = PERSONAL.find(x => x.nombre === nombre);
-      return `<a class="wa" href="${linkWA(msg, p?.phone || "")}" target="_blank">Enviar a ${nombre}</a>`;
-    }).join("");
+    // const waIndividuales = o.personal.map(nombre => {
+    //   // const p = PERSONAL.find(x => x.nombre === nombre);
+    //   return `<a class="wa" href="${linkWA(msg, p?.phone || "")}" target="_blank">Enviar a ${nombre}</a>`;
+    // }).join("");
 
     tr.innerHTML = `
-      <td>${o.numero}</td>
+      <td>${o.id}</td>
       <td>${o.area}</td>
       <td>${o.fecha}</td>
       <td>${o.supervisor}</td>
       <td>${o.trabajo}</td>
       <td>${o.magnitud}</td>
       <td>${o.descripcion}</td>
-      <td>${o.personal.join(", ")}</td>
+      <td>"personal"</td>
       <td>${new Date(o.inicio).toLocaleString()}</td>
       <td>${new Date(o.fin).toLocaleString()}</td>
       <td>${o.duracion.dias} d / ${o.duracion.horas} h</td>
-      <td>${o.responsable}</td>
+      <td>${o.responsableArea}</td>
       <td>${o.calificacion}</td>
       <td>
         <div class="wa-links">
           <a class="wa" href="${waTodos}" target="_blank">📲 Enviar a todos</a>
-          ${waIndividuales}
+         
         </div>
       </td>
     `;
