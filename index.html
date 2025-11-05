@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sistema de Órdenes de Trabajo</title>
+  <link rel="icon" type="image/png" href="./logo.png">
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -23,9 +24,10 @@
     </div>
   </div>
 
-  <!-- App protegida -->
+  <!-- App principal -->
   <div id="app" class="app hidden">
     <header class="topbar">
+      <img class="logoHeader" src="./logo.png" alt="Logo">
       <div class="brand">Órdenes de Trabajo</div>
       <div class="spacer"></div>
       <div class="userbox">
@@ -38,15 +40,9 @@
       <h1>Órdenes de Trabajo</h1>
 
       <form id="formOrden">
-        <!-- 1 -->
+        <!-- 1️⃣ Área -->
         <div>
-          <label for="numero">1️⃣ Número de orden</label>
-          <input type="number" id="numero" required/>
-        </div>
-
-        <!-- 2 -->
-        <div>
-          <label for="area">2️⃣ Área</label>
+          <label for="area">Área</label>
           <select id="area" required>
             <option value="">Seleccione</option>
             <option>Producción</option>
@@ -72,26 +68,23 @@
           </select>
         </div>
 
-        <!-- 3 -->
+        <!-- 2️⃣ Fecha -->
         <div>
-          <label for="fecha">3️⃣ Fecha actual</label>
+          <label for="fecha">Fecha actual</label>
           <input type="text" id="fecha" readonly/>
         </div>
 
-        <!-- 4 -->
+        <!-- 3️⃣ Supervisor -->
         <div>
-          <label for="supervisor">4️⃣ Supervisor responsable</label>
+          <label for="supervisor">Supervisor responsable</label>
           <select id="supervisor" required>
             <option value="">Seleccione</option>
-            <option>Ing. Carlos</option>
-            <option>Ing. Pedro</option>
-            <option>Ing. Juan</option>
           </select>
         </div>
 
-        <!-- 5 -->
+        <!-- 4️⃣ Tipo de trabajo -->
         <div>
-          <label for="trabajo">5️⃣ Tipo de trabajo</label>
+          <label for="trabajo">Tipo de trabajo</label>
           <select id="trabajo" required>
             <option value="">Seleccione</option>
             <option>Eléctrico</option>
@@ -105,9 +98,9 @@
           </select>
         </div>
 
-        <!-- 6 -->
+        <!-- 5️⃣ Magnitud -->
         <div>
-          <label for="magnitud">6️⃣ Magnitud del trabajo</label>
+          <label for="magnitud">Magnitud del trabajo</label>
           <select id="magnitud" required>
             <option value="">Seleccione</option>
             <option>Pequeño</option>
@@ -120,30 +113,30 @@
           </select>
         </div>
 
-        <!-- 7 -->
+        <!-- 6️⃣ Descripción -->
         <div class="full">
-          <label for="descripcion">7️⃣ Descripción del trabajo</label>
+          <label for="descripcion">Descripción del trabajo</label>
           <textarea id="descripcion" placeholder="Describa el trabajo..." required></textarea>
         </div>
 
-        <!-- 8 (checkboxes) -->
+        <!-- 7️⃣ Personal -->
         <div class="full">
-          <label>8️⃣ Personal (marque con un visto)</label>
-          <small class="hint">Se filtra automáticamente según el tipo de trabajo (#5).</small>
+          <label>Personal asignado</label>
+          <small class="hint">Se filtra automáticamente según el tipo de trabajo.</small>
           <div class="toolbar">
             <button type="button" id="btnSelTodo" class="btn-light">Seleccionar todo</button>
             <button type="button" id="btnSelNada" class="btn-light">Deseleccionar</button>
           </div>
-          <div id="listaPersonal" class="personal-grid"><!-- checkboxes dinámicos --></div>
+          <div id="listaPersonal" class="personal-grid"></div>
         </div>
 
-        <!-- 9 -->
+        <!-- 8️⃣ Tiempos -->
         <div>
-          <label for="inicio">9️⃣ Inicio</label>
+          <label for="inicio">Inicio</label>
           <input type="datetime-local" id="inicio" required/>
         </div>
         <div>
-          <label for="fin">9️⃣ Fin</label>
+          <label for="fin">Fin</label>
           <input type="datetime-local" id="fin" required/>
         </div>
         <div>
@@ -151,15 +144,15 @@
           <input type="text" id="duracion" readonly placeholder="Se calcula automáticamente"/>
         </div>
 
-        <!-- 10 -->
+        <!-- 9️⃣ Responsable de área -->
         <div>
-          <label for="responsable">🔟 Responsable de planta en el área</label>
+          <label for="responsable">Responsable de planta en el área</label>
           <input type="text" id="responsable" placeholder="Ej. Ing. Ramírez" required/>
         </div>
 
-        <!-- 11 -->
-        <div>
-          <label for="calificacion">1️⃣1️⃣ Calificación</label>
+        <!-- 🔟 Calificación -->
+        <!-- <div>
+          <label for="calificacion">Calificación</label>
           <select id="calificacion" required>
             <option value="">Seleccione</option>
             <option>Excelente</option>
@@ -167,26 +160,28 @@
             <option>Regular</option>
             <option>Deficiente</option>
           </select>
-        </div>
+        </div> -->
 
-        <!-- WhatsApp destino opcional -->
+        <!-- WhatsApp -->
         <div>
           <label for="telefono">WhatsApp destino (opcional)</label>
           <input type="tel" id="telefono" placeholder="Ej: 593987654321"/>
         </div>
 
+        <!-- Botones -->
         <div class="buttons full">
-          <button type="button" id="btnAgregar">Agregar</button>
-          <button type="reset" id="btnLimpiar">Limpiar</button>
-          <button type="button" id="btnExportar">Exportar CSV</button>
+          <button type="button" id="btnAgregar">➕ Agregar</button>
+          <button type="reset" id="btnLimpiar">🧹 Limpiar</button>
+          <button type="button" id="btnExportar">📤 Exportar CSV</button>
         </div>
       </form>
 
+      <!-- Tabla -->
       <div class="table-wrap">
         <table id="tablaOrdenes">
           <thead>
             <tr>
-              <th>N°</th>
+              <th>n°</th>
               <th>Área</th>
               <th>Fecha</th>
               <th>Supervisor</th>
@@ -207,6 +202,8 @@
       </div>
     </div>
   </div>
+
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="app.js"></script>
 </body>

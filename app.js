@@ -30,8 +30,9 @@ function enterApp(username){
 }
 
 function checkSession(){
-  const s = localStorage.getItem("sessionUser");
-  if (s){ enterApp(s); }
+  const dataUser = JSON.parse(localStorage.getItem("sessionUser"));
+  console.log("Revisando sesión guardada:", dataUser);
+  if (dataUser){ enterApp(dataUser.user.id); }
 }
 checkSession();
 
@@ -42,9 +43,9 @@ if (loginForm) {
     const p = document.getElementById("loginPass").value.trim();
     const {data, error} = await login(u, p); // Supabase login attempt
     console.log("Intento de login con:", u, p);
-    console.log("Resultado:", !error && data);
+    console.log("Resultado:", data.user);
     if (!error && data){
-      localStorage.setItem("sessionUser", u);
+      localStorage.setItem("sessionUser", JSON.stringify(data));
       loginErr.hidden = true;
       enterApp(u);
       loginForm.reset();
@@ -68,10 +69,28 @@ const trabajoSelect = document.getElementById("trabajo");
 const listaPersonal = document.getElementById("listaPersonal");
 const tablaBody = document.querySelector("#tablaOrdenes tbody");
 
-const TIPOS_TRABAJO = [
-  "Eléctrico","Mecánico","Hidráulico","Soldadura",
-  "Automatización","Montaje","Fabricación","Limpieza"
-];
+async function cargarSupervisores() {
+  const supervisorSelect = document.getElementById("supervisor");
+
+  const { data, error } = await supabaseClient
+    .from("supervisores")
+    .select("*");
+
+  if (error) {
+    console.error("Error obteniendo supervisores:", error);
+    return;
+  }
+  console.log("Supervisores cargados:", data);
+
+  data.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = 'Ing. '+ item.names + ' ' + item.lastNames;
+    supervisorSelect.appendChild(option);
+  });
+}
+
+cargarSupervisores();
 
 const { data: dataPersonal, error: errorPersonal } = await supabaseClient
   .from("personal")
@@ -122,25 +141,32 @@ function linkWA(textoCodificado, numero=""){
 // Render checkboxes
 function renderPersonal(tipoTrabajo = ""){
   listaPersonal.innerHTML = "";
+  console.log("Filtrando personal por tipo de trabajo:", tipoTrabajo);
   const filtrados = tipoTrabajo
-    ? dataPersonal.filter(p => p.skills.includes(tipoTrabajo))
+    ? dataPersonal.filter(p => p.area.includes(tipoTrabajo))
     : dataPersonal;
 
   (filtrados.length ? filtrados : dataPersonal).forEach(p => {
     const wrap = document.createElement("label");
     wrap.className = "chk filtered";
     wrap.innerHTML = `
-      <input type="checkbox" value="${p.nombre}" data-phone="${p.phone}">
-      <span>${p.nombre}</span>
+      <input type="checkbox" value="${p.names} ${p.lastNames}" data-phone="${p.telefono}">
+      <span>${p.names} ${p.lastNames}</span>
     `;
     listaPersonal.appendChild(wrap);
   });
 }
 
-// Estado
+//! Cargar órdenes de trabajo
 const { data, error } = await supabaseClient
   .from("workOrders")
-  .select("*")
+  .select(`*,
+    supervisores (
+    id,
+    names,
+    lastNames),
+    gradeWorkOrders (calificacion)`
+  );
 
 if (error) {
   alert("Error al cargar las órdenes de trabajo.");
@@ -178,7 +204,7 @@ document.getElementById("btnSelNada").addEventListener("click", () => {
 
 // Agregar orden
 document.getElementById("btnAgregar").addEventListener("click", async () => {
-  const numero = document.getElementById("numero").value.trim();
+  // const numero = document.getElementById("numero").value.trim();
   const area = document.getElementById("area").value;
   const fecha = fechaInput.value.trim();
   const supervisor = document.getElementById("supervisor").value;
@@ -190,10 +216,10 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
   const inicio = document.getElementById("inicio").value;
   const fin = document.getElementById("fin").value;
   const responsable = document.getElementById("responsable").value.trim();
-  const calificacion = document.getElementById("calificacion").value;
+  // const calificacion = document.getElementById("calificacion").value;
   const telefono = document.getElementById("telefono").value.replace(/\s+/g,"");
 
-  if (!numero || !area || !supervisor || !trabajo || !magnitud || !descripcion || personal.length===0 || !inicio || !fin || !responsable || !calificacion) {
+  if ( !area || !supervisor || !trabajo || !magnitud || !descripcion || personal.length===0 || !inicio || !fin || !responsable ) {
     alert("Complete todos los campos y seleccione al menos una persona.");
     return;
   }
@@ -214,9 +240,10 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
       responsableArea: responsable
     }]);
   if (error) {
-  console.error("Error al insertar:", error)
+  console.error("Error al insertar:", error);
 } else {
-  console.log("Insertado correctamente:", data)
+  console.log("Insertado correctamente:", data);
+  location.reload();
 }
 
 // Reset
@@ -226,6 +253,40 @@ renderPersonal("");
 document.getElementById("duracion").value = "";
 });
 renderTabla();
+
+// Manejar calificaciones
+document.querySelectorAll(".calificacion").forEach(select => {
+  select.addEventListener("change", async function() {
+    const valor = this.value;
+    const id = this.dataset.id;
+
+    if (!valor) return;
+
+    const confirmado = confirm(`¿Seguro que deseas calificar con: ${valor}?`);
+
+    if (!confirmado) {
+      this.value = ""; 
+      return;
+    }
+
+    // Guardar en Supabase
+    const { data, error } = await supabaseClient
+      .from("ordenes")
+      .update({ calificacion: valor })
+      .eq("id", id);
+
+    if (error) {
+      alert("Error guardando calificación");
+      console.error(error);
+      return;
+    }
+
+    alert("✅ Calificación guardada!");
+    location.reload(); // recargar tabla para actualizar UI
+  });
+});
+
+
 
 // Render tabla
 function renderTabla(){
@@ -241,27 +302,42 @@ function renderTabla(){
     //   return `<a class="wa" href="${linkWA(msg, p?.phone || "")}" target="_blank">Enviar a ${nombre}</a>`;
     // }).join("");
 
-    tr.innerHTML = `
-      <td>${o.id}</td>
-      <td>${o.area}</td>
-      <td>${o.fecha}</td>
-      <td>${o.supervisor}</td>
-      <td>${o.trabajo}</td>
-      <td>${o.magnitud}</td>
-      <td>${o.descripcion}</td>
-      <td>"personal"</td>
-      <td>${new Date(o.inicio).toLocaleString()}</td>
-      <td>${new Date(o.fin).toLocaleString()}</td>
-      <td>${o.duracion.dias} d / ${o.duracion.horas} h</td>
-      <td>${o.responsableArea}</td>
-      <td>${o.calificacion}</td>
-      <td>
-        <div class="wa-links">
-          <a class="wa" href="${waTodos}" target="_blank">📲 Enviar a todos</a>
-         
-        </div>
-      </td>
-    `;
+tr.innerHTML = `
+  <td>${o.orden}</td>
+  <td>${o.area}</td>
+  <td>${o.fecha}</td>
+  <td>Ing. ${o.supervisores.names} ${o.supervisores.lastNames}</td>
+  <td>${o.trabajo}</td>
+  <td>${o.magnitud}</td>
+  <td>${o.descripcion}</td>
+  <td>"personal"</td>
+  <td>${new Date(o.inicio).toLocaleString()}</td>
+  <td>${new Date(o.fin).toLocaleString()}</td>
+  <td>${o.duracion}</td>
+  <td>${o.responsableArea}</td>
+
+  <td>
+    ${o.gradeWorkOrders
+      ? o.gradeWorkOrders.calificacion
+      : `
+        <select class="calificacion" data-id="${o.id}">
+          <option value="">Seleccione</option>
+          <option>Excelente</option>
+          <option>Bueno</option>
+          <option>Regular</option>
+          <option>Deficiente</option>
+        </select>
+      `
+    }
+  </td>
+
+  <td>
+    <div class="wa-links">
+      <a class="wa" href="${waTodos}" target="_blank">📲 Enviar a todos</a>
+    </div>
+  </td>
+`;
+
     tablaBody.appendChild(tr);
   });
 }

@@ -187,6 +187,11 @@ body{
   min-height: 100vh;
 }
 
+.logoHeader{
+  max-width: 60px;
+  max-height: 60px;
+} 
+
 .container{
   max-width: 1400px;
   margin: 32px auto;
@@ -201,6 +206,8 @@ body{
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+
 
 h1{
   margin: 0 0 32px;
@@ -546,4 +553,5 @@ a.wa:hover{
   button{
     padding: 12px 20px;
   }
+
 }
