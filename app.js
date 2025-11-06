@@ -14,7 +14,7 @@ async function login(email, password) {
 }
 
 /************  AUTENTICACIÓN SIMPLE  ************/
-const CREDENTIALS = { user: "admidn", pass: "1234" }; // <-- cámbialas aquí
+// const CREDENTIALS = { user: "admidn", pass: "1234" }; // <-- cámbialas aquí
 
 const loginView = document.getElementById("loginView");
 const appView   = document.getElementById("app");
@@ -150,7 +150,7 @@ function renderPersonal(tipoTrabajo = ""){
     const wrap = document.createElement("label");
     wrap.className = "chk filtered";
     wrap.innerHTML = `
-      <input type="checkbox" value="${p.names} ${p.lastNames}" data-phone="${p.telefono}">
+      <input type="checkbox" value=${p.id} data-phone="${p.telefono}">
       <span>${p.names} ${p.lastNames}</span>
     `;
     listaPersonal.appendChild(wrap);
@@ -165,7 +165,10 @@ const { data, error } = await supabaseClient
     id,
     names,
     lastNames),
-    gradeWorkOrders (calificacion)`
+    gradeWorkOrders (calificacion),
+    personalOrdenes (
+      trabajador (names, lastNames, telefono)
+      )`
   );
 
 if (error) {
@@ -201,7 +204,7 @@ document.getElementById("btnSelTodo").addEventListener("click", () => {
 document.getElementById("btnSelNada").addEventListener("click", () => {
   document.querySelectorAll('#listaPersonal input[type="checkbox"]').forEach(c => c.checked = false);
 });
-
+console.log(Array.from(document.querySelectorAll('#listaPersonal input[type="checkbox"]:checked')))
 // Agregar orden
 document.getElementById("btnAgregar").addEventListener("click", async () => {
   // const numero = document.getElementById("numero").value.trim();
@@ -221,6 +224,7 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
 
   if ( !area || !supervisor || !trabajo || !magnitud || !descripcion || personal.length===0 || !inicio || !fin || !responsable ) {
     alert("Complete todos los campos y seleccione al menos una persona.");
+    console.log(checks, personal)
     return;
   }
   const duracion = calcularDuracion(inicio, fin);
@@ -232,16 +236,29 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
       trabajo: trabajo,
       magnitud: magnitud,
       descripcion: descripcion,
-      personal: personal,
+      // personal: personal,
       inicio: inicio,
       fecha: fecha,
       fin: fin,
-      duracion: duracion,
+      duracion: `${duracion.dias} día(s) ${duracion.horas} hora(s)`,
       responsableArea: responsable
-    }]);
+    }]).select(); //extraer datos insertados
+    console.log("Resultado de inserción:", data, error);
   if (error) {
   console.error("Error al insertar:", error);
 } else {
+  const orderId = data[0].id;
+  const personalDataToInsert = personal.map(personId => ({
+  orden: orderId,
+  trabajador: personId
+}));
+
+const { error: personalError } = await supabaseClient
+  .from("personalOrdenes")
+  .insert(personalDataToInsert);
+  if (personalError) {
+  console.error('se cayo en agg el personal',personalError);
+  } 
   console.log("Insertado correctamente:", data);
   location.reload();
 }
@@ -259,6 +276,8 @@ document.querySelectorAll(".calificacion").forEach(select => {
   select.addEventListener("change", async function() {
     const valor = this.value;
     const id = this.dataset.id;
+    const dataUser = JSON.parse(localStorage.getItem("sessionUser"));
+    console.log("Calificación seleccionada:", valor, "para orden ID:", id, "por usuario:", dataUser.user.id);
 
     if (!valor) return;
 
@@ -270,10 +289,19 @@ document.querySelectorAll(".calificacion").forEach(select => {
     }
 
     // Guardar en Supabase
-    const { data, error } = await supabaseClient
-      .from("ordenes")
-      .update({ calificacion: valor })
-      .eq("id", id);
+const { data, error } = await supabaseClient
+  .from("gradeWorkOrders")
+  .upsert(
+    {
+      id: id, // id de la orden de trabajo
+      calificacion: valor,
+      idCalificador: dataUser.user.id
+    },
+    { onConflict: 'id' } // le dices que 'id' es la clave única para decidir si inserta o actualiza
+  )
+  .select();
+
+
 
     if (error) {
       alert("Error guardando calificación");
@@ -310,7 +338,10 @@ tr.innerHTML = `
   <td>${o.trabajo}</td>
   <td>${o.magnitud}</td>
   <td>${o.descripcion}</td>
-  <td>"personal"</td>
+  <td>${o.personalOrdenes
+    .map(p => `${p.trabajador.names} ${p.trabajador.lastNames}`)
+    .join(', ')}
+  </td>
   <td>${new Date(o.inicio).toLocaleString()}</td>
   <td>${new Date(o.fin).toLocaleString()}</td>
   <td>${o.duracion}</td>
