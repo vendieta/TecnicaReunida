@@ -79,6 +79,7 @@ body{
   margin: 20px 0 8px;
   color: var(--text-primary);
   font-size: 0.9rem;
+  
 }
 
 .login-form input{
@@ -222,7 +223,7 @@ h1{
 }
 
 form{
-  display: grid;
+  /* display: grid; */
   grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap: 24px;
   margin-bottom: 40px;
@@ -370,6 +371,16 @@ button:active{
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
+.textPag {
+  display: inline ;
+}
+.navPag {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between; /* separa los elementos */
+  align-items: center; /* centra verticalmente */
+}
 
 .chk input[type="checkbox"]{
   width: 20px;
@@ -446,11 +457,13 @@ a.wa{
   color: #128C7E;
   text-decoration: none;
   font-weight: 600;
-  padding: 6px 12px;
+  /* padding: 6px 12px; */
   background: #d1fae5;
   border-radius: 8px;
   display: inline-block;
   transition: all 0.3s ease;
+  padding: 5px;
+  margin: 3px;
 }
 
 a.wa:hover{
