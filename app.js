@@ -292,7 +292,7 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
 
   // Render tabla
 let paginaActual = 0; // 0 = primeros 20, 1 = siguientes 20, etc.
-const tamañoPagina = 5;
+const tamañoPagina = 20;
 document.getElementById("btnPrev").addEventListener("click", () => {
   if (paginaActual > 0) {
     paginaActual--;
