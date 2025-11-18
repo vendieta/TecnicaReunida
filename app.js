@@ -130,7 +130,7 @@ async function cargarSupervisores() {
 cargarSupervisores();
 
 // Cargar personal
-const { data: dataPersonal, error: errorPersonal } = await supabaseClient.from("personal").select("*");
+const { data: dataPersonal, error: errorPersonal } = await supabaseClient.from("personal").select("*").eq("activo", true);
 if (errorPersonal) {
   // alert("Error al cargar el personal.");
   console.error("Error:", errorPersonal);
